@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA & Cloud : Présentation Interactive</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --accent-tertiary: #10b981;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --warning: #f43f5e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        /* --- MODE PRESENTATION (DESKTOP) --- */
+        #presentation-view { width: 100%; height: 100%; position: relative; }
+
+        /* Animation Background */
+        .background-blobs { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .blob { position: absolute; filter: blur(80px); opacity: 0.4; animation: float 10s infinite alternate; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--accent-primary); }
+        .blob-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: var(--accent-secondary); animation-delay: -5s; }
+        .blob-3 { top: 40%; left: 40%; width: 30vw; height: 30vw; background: var(--accent-tertiary); opacity: 0.2; }
+        @keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, 50px); } }
+
+        /* Slides */
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform: scale(0.95) translateY(20px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 2rem 4rem;
+        }
+        .slide.active { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
+
+        /* Styles de contenu */
+        h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+        h2 { font-size: 2.2rem; color: var(--accent-primary); margin-bottom: 1.5rem; position: relative; display: inline-block; }
+        h2::after { content: ''; position: absolute; bottom: -8px; left: 0; width: 60px; height: 4px; background: var(--accent-secondary); border-radius: 2px; }
+        h3 { font-size: 1.3rem; color: var(--accent-secondary); margin-bottom: 0.8rem; margin-top: 0; }
+        p { font-size: 1rem; line-height: 1.6; margin-bottom: 1rem; max-width: 900px; color: #cbd5e1; }
+        .highlight { color: var(--accent-tertiary); font-weight: 600; }
+        .warning { color: var(--warning); font-weight: 600; }
+
+        /* Cards & Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; width: 100%; max-width: 1200px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; width: 100%; max-width: 1200px; }
+        .card { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 1.5rem; border-radius: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); height: 100%; transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+        .icon-box { font-size: 2rem; margin-bottom: 1rem; color: var(--accent-primary); }
+        ul { list-style: none; }
+        li { margin-bottom: 0.5rem; position: relative; padding-left: 1.5rem; font-size: 0.95rem; }
+        li::before { content: '•'; color: var(--accent-secondary); font-size: 1.5rem; position: absolute; left: 0; top: -5px; }
+        .lumina-badge { display: inline-block; background: linear-gradient(135deg, #ec4899, #8b5cf6); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: bold; margin-bottom: 1rem; text-transform: uppercase; color: white; }
+        .vs-container { display: flex; align-items: center; justify-content: space-between; gap: 2rem; margin-top: 1rem; width: 100%; max-width: 1100px; }
+        .vs-circle { background: #fff; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; z-index: 2; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; color: #fff; max-width: 1000px; }
+        th, td { padding: 1rem; text-align: left; }
+        tr { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .big-number { font-size: 3rem; font-weight: 800; color: var(--glass-border); position: absolute; top: 0.5rem; right: 1rem; opacity: 0.2; }
+
+        /* Controls UI */
+        .controls { position: fixed; bottom: 2rem; right: 2rem; display: flex; gap: 1rem; z-index: 100; }
+        button { background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; padding: 0.8rem 1.2rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; }
+        button:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .progress-bar { position: fixed; bottom: 0; left: 0; height: 5px; background: var(--accent-secondary); width: 0%; transition: width 0.3s ease; z-index: 100; }
+        .slide-number { position: fixed; bottom: 2rem; left: 2rem; font-family: monospace; opacity: 0.5; }
+
+        /* --- QR CODE MODAL --- */
+        .qr-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.3s;
+        }
+        .qr-modal.open { visibility: visible; opacity: 1; }
+        #qrcode { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .qr-btn { position: fixed; top: 2rem; right: 2rem; z-index: 50; font-size: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); }
+
+        /* --- MODE TELECOMMANDE (MOBILE) --- */
+        #remote-view {
+            display: none; /* Hidden by default */
+            width: 100%; height: 100%;
+            background: #000;
+            flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 2rem;
+        }
+        .remote-btn {
+            width: 100%; height: 35vh;
+            margin: 1rem 0;
+            border-radius: 20px;
+            border: none;
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex; align-items: center; justify-content: center; gap: 1rem;
+            touch-action: manipulation;
+        }
+        .btn-next { background: var(--accent-primary); color: white; }
+        .btn-prev { background: #334155; color: #94a3b8; height: 20vh; }
+        .remote-status { margin-bottom: 2rem; color: #fff; text-align: center; }
+
+    </style>
+</head>
+<body>
+
+    <div id="presentation-view">
+        <div class="background-blobs">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        </div>
+
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="slide-number" id="slideNumber">01 / --</div>
+        <button class="qr-btn" onclick="toggleQR()"><i class="fas fa-qrcode"></i> Télécommande</button>
+
+        <div class="slides-container">
+            <div class="slide active">
+                <div style="text-align: center;">
+                    <p style="text-transform: uppercase; letter-spacing: 4px; color: var(--accent-primary); margin-bottom: 1rem;">Master 2 - Stratégie Digitale</p>
+                    <h1>IA & Cloud Computing</h1>
+                    <p style="font-size: 1.5rem; color: var(--accent-secondary);">La Démocratisation et ses Défis</p>
+                    <div style="margin-top: 3rem; padding: 1rem 2rem; border: 1px solid var(--glass-border); border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); cursor:pointer;" onclick="nextSlide()">
+                        <i class="fas fa-arrow-right"></i> Commencer
+                    </div>
+                </div>
+            </div>
+            
+            <div class="slide">
+                <h2>Une Double Révolution</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="icon-box"><i class="fas fa-brain"></i></div>
+                        <h3>IA Générative</h3>
+                        <p>Bouleverse la création de contenu, l'automatisation et la prise de décision.</p>
+                    </div>
+                    <div class="card">
+                        <div class="icon-box"><i class="fas fa-cloud"></i></div>
+                        <h3>Cloud Computing</h3>
+                        <p>L'infrastructure dominante qui agit comme <strong>accélérateur</strong> en supprimant les barrières d'entrée.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <h2>Problématique</h2>
+                <div class="card" style="border-left: 5px solid var(--accent-secondary); width: 100%; max-width: 900px; padding: 2rem;">
+                    <h1 style="font-size: 2rem; text-align: left; background: none; -webkit-text-fill-color: initial; color: white; margin: 0;">
+                        Comment les architectures cloud redéfinissent-elles la démocratisation de l'intelligence artificielle ?
+                    </h1>
+                </div>
+                <div class="grid-3" style="margin-top: 3rem;">
+                    <div style="text-align: center;"><i class="fas fa-chart-line" style="font-size: 2rem; color: var(--accent-tertiary);"></i><p>Économique</p></div>
+                    <div style="text-align: center;"><i class="fas fa-sitemap" style="font-size: 2rem; color: var(--accent-primary);"></i><p>Organisation</p></div>
+                    <div style="text-align: center;"><i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--warning);"></i><p>Souveraineté</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <h2>Plan de l'analyse</h2>
+                <div class="grid-3">
+                    <div class="card"><div class="big-number">I</div><h3>Technique</h3><ul><li>CAPEX vers OPEX</li><li>Standardisation</li><li>Model Gardens</li></ul></div>
+                    <div class="card"><div class="big-number">II</div><h3>Frontières</h3><ul><li>Faire ou Faire-faire ?</li><li>Cas Lumina Corp</li></ul></div>
+                    <div class="card"><div class="big-number">III</div><h3>Organisation</h3><ul><li>Gouvernance</li><li>Contrôle</li><li>Hiérarchie</li></ul></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">I. Technique</span>
+                <h2>Du CAPEX à l'OPEX</h2>
+                <div class="vs-container">
+                    <div class="card" style="width: 45%;"><h3 class="warning">AVANT (Capex)</h3><ul><li>Investissement lourd</li><li>Rigidité</li></ul></div>
+                    <div class="vs-circle"><i class="fas fa-arrow-right"></i></div>
+                    <div class="card" style="width: 45%; border-color: var(--accent-tertiary);"><h3 class="highlight">MAINTENANT (Opex)</h3><ul><li>Pay-as-you-go</li><li>Droit à l'erreur</li></ul></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">I. Technique</span>
+                <h2>L'Usine à IA</h2>
+                <div class="grid-3" style="margin-top: 2rem;">
+                    <div class="card"><i class="fab fa-docker icon-box"></i><h3>Docker</h3><p>Reproductibilité.</p></div>
+                    <div class="card"><i class="fas fa-dharmachakra icon-box"></i><h3>Kubernetes</h3><p>Scalabilité Auto.</p></div>
+                    <div class="card"><i class="fas fa-cogs icon-box"></i><h3>MLOps</h3><p>Industrialisation.</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">I. Technique</span>
+                <h2>Accès aux Modèles</h2>
+                <div class="grid-2">
+                    <div class="card"><h3>Model Gardens</h3><p>Catalogues (Amazon Bedrock, HuggingFace).</p></div>
+                    <div class="card"><h3>API / MaaS</h3><p>Zéro infra, mais dépendance fournisseur.</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">II. Étude de Cas</span>
+                <h1>Lumina Corp</h1>
+                <p>La question : Faire (Internaliser) ou Faire-faire (Marché) ?</p>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">II. Cas Lumina</span>
+                <h2>1. Hardware</h2>
+                <div class="grid-2">
+                    <div class="card" style="opacity: 0.6;"><h3>Idéal Théorique</h3><p>Produire ses puces (Google TPU).</p></div>
+                    <div class="card" style="border-color: var(--accent-tertiary);"><h3>Réalité Lumina</h3><p>Trop cher. <span class="highlight">Décision : SUBIR le marché.</span></p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">II. Cas Lumina</span>
+                <h2>2. Modèle LLM</h2>
+                <div class="vs-container">
+                    <div class="card" style="width: 45%;"><h3>MAKE</h3><p class="warning">Coûts énormes, risque élevé.</p></div>
+                    <div class="vs-circle">VS</div>
+                    <div class="card" style="width: 45%; border: 2px solid var(--accent-tertiary);"><h3>BUY (Gagnant)</h3><p class="highlight">GPT-4 / Mistral via API.</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">II. Cas Lumina</span>
+                <h2>3. Hébergement Hybride</h2>
+                <table>
+                    <tr style="background: rgba(255,255,255,0.1);"><th>Dépt</th><th>Données</th><th>Solution</th></tr>
+                    <tr><td>Marketing</td><td>Publiques</td><td><span style="color:var(--accent-primary)">CLOUD PUBLIC</span></td></tr>
+                    <tr><td>R&D</td><td>Secrets</td><td><span style="color:var(--accent-tertiary)">ON-PREMISE (Local)</span></td></tr>
+                </table>
+            </div>
+
+             <div class="slide">
+                <span class="lumina-badge">II. Cas Lumina</span>
+                <h2>4. Facturation Interne</h2>
+                <div class="grid-2">
+                    <div class="card"><h3><i class="fas fa-coins"></i> Cloud</h3><p>Facturation au Token (Réel).</p></div>
+                    <div class="card"><h3><i class="fas fa-server"></i> Local</h3><p>Facturation au % GPU (Amortissement).</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">III. Organisation</span>
+                <h2>3.1 Nouvelle Gouvernance</h2>
+                <div class="grid-2">
+                    <div class="card"><h3>C-Level</h3><ul><li>Chief Data Officer</li><li>Chief AI Officer</li></ul></div>
+                    <div class="card"><h3>Piliers</h3><ul><li>Qualité</li><li>Cycle de vie</li><li>Conformité</li></ul></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">III. Organisation</span>
+                <h2>3.2 Contrôle Hybride</h2>
+                <div class="grid-3">
+                    <div class="card"><h3 class="warning">Boîte Noire</h3><p>L'IA est probabiliste.</p></div>
+                    <div class="card"><h3>Humain</h3><p>Comités d'éthique.</p></div>
+                    <div class="card"><h3>Technique</h3><p>Monitoring de drift.</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <span class="lumina-badge">III. Organisation</span>
+                <h2>3.3 Hiérarchie & Squads</h2>
+                <div class="vs-container">
+                    <div class="card" style="width: 48%;"><h3>Fin des Silos</h3><p>Équipes agiles transverses.</p></div>
+                    <div class="card" style="width: 48%;"><h3>Intelligence Augmentée</h3><p>L'homme pilote, la machine exécute.</p></div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <h2>Conclusion</h2>
+                <div class="card" style="text-align: center;">
+                    <p class="highlight" style="font-size: 1.5rem;">Défi : Gérer la tension entre Accessibilité et Maîtrise.</p>
+                </div>
+            </div>
+            
+            <div class="slide">
+                <h1>Merci</h1>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="prevBtn"><i class="fas fa-arrow-left"></i></button>
+            <button id="nextBtn"><i class="fas fa-arrow-right"></i></button>
+        </div>
+
+        <div class="qr-modal" id="qrModal">
+            <h2 style="color: white; margin-bottom: 2rem;">Scanner pour contrôler</h2>
+            <div id="qrcode"></div>
+            <p style="color: #cbd5e1; margin-top: 1rem;">Votre téléphone et cet ordinateur doivent être connectés à internet.</p>
+            <button onclick="toggleQR()" style="margin-top: 2rem;">Fermer</button>
+        </div>
+    </div>
+
+    <div id="remote-view">
+        <div class="remote-status" id="remoteStatus">
+            <i class="fas fa-spinner fa-spin"></i> Connexion...
+        </div>
+        <button class="remote-btn btn-next" onclick="sendAction('next')">
+            SUIVANT <i class="fas fa-arrow-right"></i>
+        </button>
+        <button class="remote-btn btn-prev" onclick="sendAction('prev')">
+            <i class="fas fa-arrow-left"></i> Précédent
+        </button>
+    </div>
+
+    <script>
+        // --- LOGIQUE COMMUNE ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRemote = urlParams.has('remote');
+        const peerId = urlParams.get('remote');
+        
+        let peer;
+        let conn;
+
+        // --- 1. LOGIQUE TELECOMMANDE (MOBILE) ---
+        if (isRemote) {
+            document.getElementById('presentation-view').style.display = 'none';
+            document.getElementById('remote-view').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            peer = new Peer(); // Crée une identité pour le téléphone
+
+            peer.on('open', (id) => {
+                // Se connecter à l'ordi
+                const conn = peer.connect(peerId);
+
+                conn.on('open', () => {
+                    document.getElementById('remoteStatus').innerHTML = '<i class="fas fa-wifi" style="color: #10b981;"></i> Connecté à la présentation';
+                });
+
+                window.sendAction = (action) => {
+                    if(conn) conn.send(action);
+                    // Vibration feedback
+                    if(navigator.vibrate) navigator.vibrate(50);
+                }
+            });
+
+            peer.on('error', (err) => {
+                document.getElementById('remoteStatus').innerText = "Erreur de connexion :(";
+                console.error(err);
+            });
+
+        } else {
+        // --- 2. LOGIQUE PRESENTATION (DESKTOP) ---
+            
+            // --- Slide Logic ---
+            const slides = document.querySelectorAll('.slide');
+            const progressBar = document.getElementById('progressBar');
+            const slideNumberDisplay = document.getElementById('slideNumber');
+            let currentSlide = 0;
+            const totalSlides = slides.length;
+
+            function updateSlide() {
+                slides.forEach((slide, index) => {
+                    slide.classList.remove('active');
+                    if (index === currentSlide) slide.classList.add('active');
+                });
+                const progress = ((currentSlide + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progress}%`;
+                slideNumberDisplay.textContent = `${String(currentSlide + 1).padStart(2, '0')} / ${totalSlides}`;
+            }
+
+            function nextSlide() {
+                if (currentSlide < totalSlides - 1) { currentSlide++; updateSlide(); }
+            }
+
+            function prevSlide() {
+                if (currentSlide > 0) { currentSlide--; updateSlide(); }
+            }
+
+            document.getElementById('nextBtn').addEventListener('click', nextSlide);
+            document.getElementById('prevBtn').addEventListener('click', prevSlide);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+                else if (e.key === 'ArrowLeft') prevSlide();
+            });
+
+            // --- PeerJS Logic (Receiver) ---
+            peer = new Peer(); // ID auto-généré
+
+            peer.on('open', (id) => {
+                console.log('My ID is: ' + id);
+                // Générer l'URL pour le téléphone
+                const remoteUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?remote=${id}`;
+                
+                // Générer QR Code
+                new QRCode(document.getElementById("qrcode"), {
+                    text: remoteUrl,
+                    width: 256,
+                    height: 256,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            });
+
+            peer.on('connection', (c) => {
+                conn = c;
+                console.log("Téléphone connecté !");
+                // Fermer la modale auto si connecté
+                document.getElementById('qrModal').classList.remove('open');
+                
+                conn.on('data', (data) => {
+                    if(data === 'next') nextSlide();
+                    if(data === 'prev') prevSlide();
+                });
+            });
+
+            // --- QR Modal ---
+            window.toggleQR = () => {
+                document.getElementById('qrModal').classList.toggle('open');
+            }
+
+            // Init
+            updateSlide();
+        }
+    </script>
+</body>
+</html>
