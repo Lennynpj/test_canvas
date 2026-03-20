@@ -1,0 +1,23 @@
+# ── Graph RAG – Core (required) ─────────────────────────────────────────
+networkx>=3.2
+
+# ── Embeddings (strongly recommended) ───────────────────────────────────
+sentence-transformers>=2.7
+numpy>=1.26
+
+# ── NLP entity extraction (optional, improves graph quality) ────────────
+spacy>=3.7
+# After install run:  python -m spacy download en_core_web_sm
+
+# ── Local SLM backends – install ONE of the following ───────────────────
+
+# Option A: Ollama  (recommended – install from https://ollama.com)
+ollama>=0.2
+
+# Option B: llama-cpp-python (direct .gguf, no server needed)
+# llama-cpp-python>=0.2.56
+
+# Option C: HuggingFace Transformers
+# transformers>=4.40
+# torch>=2.2
+# accelerate>=0.30
