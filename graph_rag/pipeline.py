@@ -22,18 +22,33 @@ from .retriever import GraphRetriever
 from .slm import LocalSLM
 
 
-SYSTEM_PROMPT = """You are a helpful assistant that answers questions based strictly
-on the provided context. If the context does not contain enough information to
-answer the question, say so honestly. Be concise and accurate."""
+SYSTEM_PROMPT = """You are a knowledge graph reasoning assistant.
+You are given:
+  1. A set of GRAPH RELATIONS extracted from a knowledge graph (entity → relation → entity triplets).
+  2. SOURCE PASSAGES from the original documents for grounding.
 
-RAG_PROMPT_TEMPLATE = """Context extracted from the knowledge graph:
+Your task:
+  - Read ALL the graph relations carefully.
+  - Trace paths and connections between entities to reason about the question.
+  - Use the source passages to support or enrich your answer.
+  - If the graph does not contain enough information to answer, say so honestly.
+  - Be structured and precise in your answer."""
+
+RAG_PROMPT_TEMPLATE = """Below is the relevant sub-graph extracted from the knowledge base.
+It contains every relation found between the entities related to your question.
+
 {context}
 
 ---
 
 Question: {question}
 
-Answer based on the context above:"""
+Instructions:
+- Analyse the graph relations above (the triplets show how entities are connected).
+- Trace the relevant paths in the graph to answer the question.
+- Cite the source passages where appropriate.
+
+Answer:"""
 
 
 class GraphRAGPipeline:
@@ -63,9 +78,10 @@ class GraphRAGPipeline:
         slm_backend: str = "auto",
         slm_model: str | None = None,
         use_embeddings: bool = True,
-        top_k: int = 3,
-        graph_depth: int = 2,
-        max_context_chunks: int = 6,
+        top_k_seeds: int = 5,
+        max_entities: int = 50,
+        max_triplets: int = 100,
+        max_source_chunks: int = 5,
         graph_save_path: str | None = "graph_rag_index.json",
         **slm_kwargs,
     ):
@@ -74,9 +90,10 @@ class GraphRAGPipeline:
         self._slm: LocalSLM | None = None
 
         self._use_embeddings  = use_embeddings
-        self._top_k           = top_k
-        self._graph_depth     = graph_depth
-        self._max_ctx         = max_context_chunks
+        self._top_k_seeds     = top_k_seeds
+        self._max_entities    = max_entities
+        self._max_triplets    = max_triplets
+        self._max_src_chunks  = max_source_chunks
         self._graph_save_path = graph_save_path
         self._slm_backend     = slm_backend
         self._slm_model       = slm_model
@@ -137,7 +154,7 @@ class GraphRAGPipeline:
             raise RuntimeError("Index not built. Call build_index() or load_index() first.")
 
         self._ensure_slm()
-        context = self._retriever.format_context(question)
+        context = self._retriever.format_graph_context(question)
         prompt  = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
 
         if stream:
@@ -172,9 +189,10 @@ class GraphRAGPipeline:
         self._retriever = GraphRetriever(
             graph=graph,
             chunks=chunks,
-            top_k=self._top_k,
-            graph_depth=self._graph_depth,
-            max_context_chunks=self._max_ctx,
+            top_k_seeds=self._top_k_seeds,
+            max_entities=self._max_entities,
+            max_triplets=self._max_triplets,
+            max_source_chunks=self._max_src_chunks,
         )
         print(f"[Pipeline] Retriever ready. Graph: "
               f"{graph.number_of_nodes()} nodes / {graph.number_of_edges()} edges, "

@@ -55,9 +55,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-tokens",  type=int,   default=512)
 
     # ── retrieval options ────────────────────────────────────────────────
-    p.add_argument("--top-k",        type=int, default=3,  help="Seed chunks from embedding search")
-    p.add_argument("--graph-depth",  type=int, default=2,  help="BFS depth for graph expansion")
-    p.add_argument("--max-context",  type=int, default=6,  help="Max chunks injected into prompt")
+    p.add_argument("--top-k-seeds",     type=int, default=5,   help="Seed entities to start graph walk from (default: 5)")
+    p.add_argument("--max-entities",    type=int, default=50,  help="Max entities explored in sub-graph (default: 50)")
+    p.add_argument("--max-triplets",    type=int, default=100, help="Max entity-relation-entity triplets sent to LLM (default: 100)")
+    p.add_argument("--max-sources",     type=int, default=5,   help="Max source passages appended for grounding (default: 5)")
     p.add_argument("--no-embeddings", action="store_true", help="Disable sentence-transformer embeddings")
 
     # ── persistence ──────────────────────────────────────────────────────
@@ -78,9 +79,10 @@ def main(argv: list[str] | None = None) -> None:
         temperature      = args.temperature,
         max_tokens       = args.max_tokens,
         use_embeddings   = not args.no_embeddings,
-        top_k            = args.top_k,
-        graph_depth      = args.graph_depth,
-        max_context_chunks = args.max_context,
+        top_k_seeds      = args.top_k_seeds,
+        max_entities     = args.max_entities,
+        max_triplets     = args.max_triplets,
+        max_source_chunks= args.max_sources,
         graph_save_path  = args.save_index,
     )
 
@@ -100,11 +102,20 @@ def main(argv: list[str] | None = None) -> None:
 
     # ── run query / chat ────────────────────────────────────────────────
     if args.retrieve_only:
-        chunks = rag.retrieve_only(args.retrieve_only)
-        print(f"\n[Retrieved {len(chunks)} chunk(s) for: '{args.retrieve_only}']\n")
-        for i, c in enumerate(chunks, 1):
-            print(f"  [{i}] doc={c['doc_id']}  score={c['score']:.3f}  source={c['source']}")
-            print(f"      {c['text'][:200]!r}\n")
+        data = rag._retriever.retrieve_graph(args.retrieve_only)
+        print(f"\n[Graph retrieval for: '{args.retrieve_only}']\n")
+        print(f"Seed entities : {data['seed_entities']}")
+        print(f"Entities found: {len(data['entities'])}")
+        print(f"Triplets found: {len(data['triplets'])}\n")
+        print("RELATIONS:")
+        for t in data["triplets"]:
+            w = f"  (weight={t['weight']})" if t.get("weight") else ""
+            print(f"  {t['subject']}  --[{t['relation']}]-->  {t['object']}{w}")
+        if data["source_chunks"]:
+            print("\nSOURCE PASSAGES:")
+            for i, c in enumerate(data["source_chunks"], 1):
+                print(f"  [{i}] doc={c['doc_id']}  score={c['score']:.3f}")
+                print(f"       {c['text'][:200]!r}\n")
         return
 
     if args.query:
